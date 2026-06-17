@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GrantAid — AI Grant Writing Assistant for Nonprofits</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:       #1a1a2e;
+      --ink-soft:  #4a4a6a;
+      --ink-mute:  #8888aa;
+      --bg:        #f7f6f2;
+      --surface:   #ffffff;
+      --border:    #e2e0d8;
+      --accent:    #2d6a4f;
+      --accent-lt: #d8f3dc;
+      --accent-dk: #1b4332;
+      --gold:      #b7881c;
+      --gold-lt:   #fef3cd;
+      --red-lt:    #fff0f0;
+      --red:       #c0392b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--ink);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.4rem;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+
+    .logo span { color: #52b788; }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: var(--accent-lt);
+      color: var(--accent-dk);
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      background: var(--ink);
+      padding: 5rem 2rem 4rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 100%, #2d6a4f33, transparent);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #52b788;
+      margin-bottom: 1.2rem;
+    }
+
+    .hero h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2.2rem, 5vw, 3.6rem);
+      color: #fff;
+      line-height: 1.15;
+      max-width: 700px;
+      margin: 0 auto 1.2rem;
+      letter-spacing: -0.03em;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: #52b788;
+    }
+
+    .hero p {
+      color: #a0a8c0;
+      font-size: 1.05rem;
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+    }
+
+    /* ── SETUP CARD ── */
+    .setup-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .setup-card h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.25rem;
+      color: var(--ink);
+      margin-bottom: 0.35rem;
+    }
+
+    .setup-card p {
+      font-size: 0.875rem;
+      color: var(--ink-soft);
+      margin-bottom: 1.25rem;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-bottom: 0.4rem;
+    }
+
+    .api-row {
+      display: flex;
+      gap: 0.6rem;
+      align-items: stretch;
+    }
+
+    input[type="password"],
+    input[type="text"],
+    textarea,
+    select {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      color: var(--ink);
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem 0.9rem;
+      width: 100%;
+      transition: border-color 0.15s;
+      outline: none;
+    }
+
+    input[type="password"] { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+      background: #fff;
+    }
+
+    textarea { resize: vertical; line-height: 1.6; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      padding: 0.65rem 1.2rem;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      width: 100%;
+      justify-content: center;
+      font-size: 0.95rem;
+      padding: 0.8rem;
+    }
+
+    .btn-primary:hover:not(:disabled) { background: var(--accent-dk); }
+
+    .btn-secondary {
+      background: var(--border);
+      color: var(--ink-soft);
+    }
+
+    .btn-secondary:hover:not(:disabled) { background: #d4d2ca; }
+
+    .btn-save {
+      background: var(--ink);
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .btn-save:hover { background: #2a2a45; }
+
+    /* ── STATUS INDICATOR ── */
+    .api-status {
+      font-size: 0.78rem;
+      margin-top: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--ink-mute);
+      flex-shrink: 0;
+    }
+
+    .dot.connected { background: #52b788; box-shadow: 0 0 0 3px #52b78830; }
+    .dot.error     { background: var(--red); }
+
+    /* ── MISSION CARD ── */
+    .mission-card {
+      background: var(--gold-lt);
+      border: 1.5px solid #e6c96a;
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .mission-card h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.2rem;
+      color: var(--gold);
+      margin-bottom: 0.3rem;
+    }
+
+    .mission-card p {
+      font-size: 0.85rem;
+      color: #7a6010;
+      margin-bottom: 1rem;
+    }
+
+    /* ── GRANT TOOL ── */
+    .grant-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      margin-bottom: 2rem;
+    }
+
+    .grant-card-header {
+      padding: 1.25rem 2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .grant-card-header h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.2rem;
+    }
+
+    .grant-card-body { padding: 1.75rem 2rem; }
+
+    .form-grid {
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+
+    .field { display: flex; flex-direction: column; gap: 0.4rem; }
+
+    .char-hint {
+      font-size: 0.72rem;
+      color: var(--ink-mute);
+      text-align: right;
+      margin-top: 0.2rem;
+    }
+
+    /* ── OUTPUT ── */
+    .output-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .output-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--accent-lt);
+    }
+
+    .output-header h3 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent-dk);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    .output-body {
+      padding: 1.75rem 2rem;
+      min-height: 180px;
+    }
+
+    .output-placeholder {
+      color: var(--ink-mute);
+      font-size: 0.9rem;
+      font-style: italic;
+      text-align: center;
+      padding: 2rem 0;
+    }
+
+    .output-text {
+      font-size: 0.95rem;
+      line-height: 1.8;
+      color: var(--ink);
+      white-space: pre-wrap;
+    }
+
+    /* ── LOADING ── */
+    .loader {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: var(--accent);
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 1.5rem 0;
+      justify-content: center;
+    }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2.5px solid var(--accent-lt);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── COPY BUTTON ── */
+    .btn-copy {
+      font-size: 0.78rem;
+      padding: 0.35rem 0.8rem;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+
+    .btn-copy:hover { background: var(--accent-dk); }
+
+    /* ── ERROR ── */
+    .error-box {
+      background: var(--red-lt);
+      border: 1.5px solid #f5c6c6;
+      border-radius: 8px;
+      padding: 0.9rem 1.2rem;
+      font-size: 0.875rem;
+      color: var(--red);
+      margin-top: 1rem;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .how-it-works {
+      margin-top: 3rem;
+      padding: 2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .how-it-works h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.2rem;
+      margin-bottom: 1.2rem;
+      color: var(--ink);
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.2rem;
+    }
+
+    .step {
+      padding: 1.1rem;
+      background: var(--bg);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .step-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--accent);
+      margin-bottom: 0.4rem;
+    }
+
+    .step h3 { font-size: 0.875rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .step p  { font-size: 0.8rem; color: var(--ink-soft); line-height: 1.5; }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--ink-mute);
+      padding: 2rem 1rem;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Grant<span>Aid</span></div>
+  <span class="badge">Powered by Claude AI</span>
+</header>
+
+<section class="hero">
+  <p class="hero-eyebrow">AI Grant Writing Assistant</p>
+  <h1>Write stronger grant responses, <em>faster.</em></h1>
+  <p>Paste any grant question. GrantAid drafts a compelling response grounded in your organization's mission — in seconds.</p>
+</section>
+
+<main class="container">
+
+  <!-- API KEY SETUP -->
+  <div class="setup-card">
+    <h2>Connect your API key</h2>
+    <p>Get your free key at <strong>console.anthropic.com</strong> → API Keys. Your key is never stored or sent anywhere except directly to Anthropic.</p>
+    <label class="field-label" for="apiKey">Anthropic API Key</label>
+    <div class="api-row">
+      <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off"/>
+      <button class="btn btn-save" onclick="saveKey()">Save Key</button>
+    </div>
+    <div class="api-status">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">No key saved yet</span>
+    </div>
+  </div>
+
+  <!-- MISSION SETUP -->
+  <div class="mission-card">
+    <h2>Your Organization's Mission</h2>
+    <p>Describe your nonprofit's mission and the communities you serve. GrantAid uses this to personalize every response.</p>
+    <div class="field">
+      <label class="field-label" for="orgMission">Mission Statement</label>
+      <textarea id="orgMission" rows="3" placeholder="e.g. We provide free after-school tutoring and mentorship to underserved youth in Washington D.C., helping students from low-income households build academic confidence and career readiness skills."></textarea>
+    </div>
+  </div>
+
+  <!-- GRANT TOOL -->
+  <div class="grant-card">
+    <div class="grant-card-header">
+      <h2>Grant Question</h2>
+      <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+    </div>
+    <div class="grant-card-body">
+      <div class="form-grid">
+        <div class="form-row">
+          <div class="field">
+            <label class="field-label" for="grantOrg">Funding Organization</label>
+            <input type="text" id="grantOrg" placeholder="e.g. Gates Foundation"/>
+          </div>
+          <div class="field">
+            <label class="field-label" for="wordLimit">Word Limit</label>
+            <select id="wordLimit">
+              <option value="150">~150 words</option>
+              <option value="250" selected>~250 words</option>
+              <option value="500">~500 words</option>
+              <option value="750">~750 words</option>
+              <option value="1000">~1000 words</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="grantQuestion">Grant Application Question</label>
+          <textarea id="grantQuestion" rows="4" placeholder="Paste the grant question here — e.g. 'Describe how your program addresses an unmet need in the community and explain your organization's capacity to deliver measurable outcomes.'"></textarea>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="extraContext">Supporting Details <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+          <textarea id="extraContext" rows="3" placeholder="Add any specific stats, programs, or outcomes you want included — e.g. 'We served 340 students last year, 92% improved their GPA.'"></textarea>
+        </div>
+
+        <button class="btn btn-primary" id="generateBtn" onclick="generateResponse()">
+          ✦ Draft Grant Response
+        </button>
+
+        <div id="errorBox" class="error-box" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="output-section" id="outputSection" style="display:none">
+    <div class="output-header">
+      <h3>✦ AI-Drafted Response</h3>
+      <button class="btn-copy" onclick="copyOutput()">Copy text</button>
+    </div>
+    <div class="output-body" id="outputBody">
+      <div class="output-placeholder">Your draft will appear here.</div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="how-it-works">
+    <h2>How GrantAid works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01 —</div>
+        <h3>Enter your mission</h3>
+        <p>Describe your nonprofit so every draft reflects your real programs and communities.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02 —</div>
+        <h3>Paste the question</h3>
+        <p>Copy any grant application question directly from the funder's portal.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03 —</div>
+        <h3>Add your data</h3>
+        <p>Include stats, outcomes, or programs you want the response to highlight.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">04 —</div>
+        <h3>Review and refine</h3>
+        <p>GrantAid drafts — your team personalizes and submits. Always human-reviewed.</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  GrantAid · Built with the Claude API &nbsp;·&nbsp; A portfolio project by a Claude Corps applicant
+</footer>
+
+<script>
+  // ── KEY MANAGEMENT ──
+  function saveKey() {
+    const key = document.getElementById('apiKey').value.trim();
+    if (!key.startsWith('sk-ant-')) {
+      setStatus('error', 'Key should start with sk-ant-');
+      return;
+    }
+    sessionStorage.setItem('ga_key', key);
+    setStatus('connected', 'API key saved for this session');
+  }
+
+  function getKey() {
+    return sessionStorage.getItem('ga_key') || '';
+  }
+
+  function setStatus(state, msg) {
+    const dot  = document.getElementById('statusDot');
+    const text = document.getElementById('statusText');
+    dot.className  = 'dot ' + (state === 'connected' ? 'connected' : state === 'error' ? 'error' : '');
+    text.textContent = msg;
+  }
+
+  // restore key hint on load
+  window.addEventListener('load', () => {
+    const k = getKey();
+    if (k) {
+      document.getElementById('apiKey').value = k;
+      setStatus('connected', 'API key loaded');
+    }
+  });
+
+  // ── GENERATE ──
+  async function generateResponse() {
+    const key      = getKey();
+    const mission  = document.getElementById('orgMission').value.trim();
+    const question = document.getElementById('grantQuestion').value.trim();
+    const context  = document.getElementById('extraContext').value.trim();
+    const words    = document.getElementById('wordLimit').value;
+    const grantOrg = document.getElementById('grantOrg').value.trim();
+    const errorBox = document.getElementById('errorBox');
+    const btn      = document.getElementById('generateBtn');
+
+    errorBox.style.display = 'none';
+
+    if (!key)      { showError('Please enter and save your Anthropic API key first.'); return; }
+    if (!mission)  { showError('Please enter your organization\'s mission statement.'); return; }
+    if (!question) { showError('Please paste a grant question.'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Drafting…';
+    showOutput('<div class="loader"><div class="spinner"></div>Claude is writing your draft…</div>');
+
+    const funderLine = grantOrg ? `The grant is from: ${grantOrg}.` : '';
+    const contextLine = context ? `\n\nAdditional details to weave in:\n${context}` : '';
+
+    const prompt = `You are an expert nonprofit grant writer helping a small organization respond to a grant application.
+
+Organization mission:
+${mission}
+${funderLine}
+
+Grant question:
+${question}
+${contextLine}
+
+Write a compelling, specific, and sincere response in approximately ${words} words. 
+- Write in first-person plural ("We", "Our organization")
+- Avoid generic filler phrases like "we are passionate about" or "we are committed to"
+- Be concrete about who is served, what is done, and what outcomes result
+- Match the tone to a professional grant application
+- Do not include a subject line or heading, just the response text`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-calls': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1200,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        const msg = data?.error?.message || 'Unknown error from API.';
+        showError('API error: ' + msg);
+        btn.disabled = false;
+        btn.textContent = '✦ Draft Grant Response';
+        return;
+      }
+
+      const text = data.content?.map(b => b.text || '').join('') || '';
+      showOutput(`<div class="output-text">${escapeHtml(text)}</div>`);
+
+    } catch (err) {
+      showError('Network error — check your connection and try again.');
+      console.error(err);
+    }
+
+    btn.disabled = false;
+    btn.textContent = '✦ Draft Grant Response';
+  }
+
+  // ── HELPERS ──
+  function showOutput(html) {
+    document.getElementById('outputSection').style.display = 'block';
+    document.getElementById('outputBody').innerHTML = html;
+    document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('errorBox');
+    box.textContent = msg;
+    box.style.display = 'block';
+  }
+
+  function copyOutput() {
+    const text = document.getElementById('outputBody').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.btn-copy');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy text', 2000);
+    });
+  }
+
+  function clearAll() {
+    document.getElementById('grantQuestion').value = '';
+    document.getElementById('extraContext').value = '';
+    document.getElementById('grantOrg').value = '';
+    document.getElementById('outputSection').style.display = 'none';
+    document.getElementById('errorBox').style.display = 'none';
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+</script>
+</body>
+</html>
